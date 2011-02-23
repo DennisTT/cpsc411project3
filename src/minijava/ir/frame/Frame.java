@@ -1,7 +1,5 @@
 package minijava.ir.frame;
 
-import minijava.codegen.assem.Instr;
-import minijava.codegen.muncher.Muncher;
 import minijava.ir.interp.Interp;
 import minijava.ir.interp.Word;
 import minijava.ir.interp.X86SimFrame;
