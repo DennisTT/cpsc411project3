@@ -6,7 +6,7 @@ import minijava.ir.tree.IRExp;
 
 public class X86InReg extends Access
 {
-  Temp temp;
+  private Temp temp;
   
   protected X86InReg(Temp temp)
   {
