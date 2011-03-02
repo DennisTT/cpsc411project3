@@ -6,64 +6,97 @@ import minijava.ir.interp.Interp;
 import minijava.ir.interp.Word;
 import minijava.ir.interp.X86SimFrame;
 import minijava.ir.temp.Label;
+import minijava.ir.temp.Temp;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
 import minijava.util.IndentingWriter;
 import minijava.util.List;
 
 public class X86Frame extends Frame {
+  public static final int FIRST_FORMAL_OFFSET = 4;
+  public static final int FORMAL_INCREMENT = 4;
+  
+  public static X86Frame factory = new X86Frame(null, null);
+  
+  protected int localCount = 0;
 
-	protected X86Frame(Label label, List<Access> formals) {
+	protected X86Frame(Label label, List<Access> formals)
+	{
 		super(label, formals);
-		// TODO Auto-generated constructor stub
+	}
+	
+	public int numLocals()
+	{
+	  return this.localCount;
 	}
 
 	@Override
-	public void dump(IndentingWriter out) {
+	public void dump(IndentingWriter out)
+	{
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
-	public Frame newFrame(Label name, List<Boolean> formalsEscape) {
+	public Frame newFrame(Label name, List<Boolean> formalsEscape)
+	{
+	  int offset = FIRST_FORMAL_OFFSET;
+	  
+	  List<Access> newFormals = List.empty();
+	  for(Boolean b : formalsEscape)
+	  {
+	    if(b)
+	    {
+	      newFormals.add(new X86InFrame(offset));
+	      offset += this.wordSize();
+	    }
+	    else
+	    {
+	      newFormals.add(new X86InReg(new Temp()));
+	    }
+	  }
+	  
+	  return new X86Frame(name, newFormals);
+	}
+
+	@Override
+	public Access allocLocal(boolean escapes)
+	{
+		// TODO Auto-generated method stub
+	  ++this.localCount;
+		return null;
+	}
+
+	@Override
+	public IRExp FP()
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Access allocLocal(boolean escapes) {
+	public IRExp RV()
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public IRExp FP() {
+	public int wordSize()
+	{
+	  // x86 supports 32-bit addressing (4 bytes)
+		return 4;
+	}
+
+	@Override
+	public IRStm procEntryExit1(IRStm body)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public IRExp RV() {
-		// TODO Auto-generated method stub
-		return null;
+	public X86SimFrame newSimFrame(Interp interp, List<Word> args)
+	{
+		return new X86SimFrame(interp, factory, args);
 	}
-
-	@Override
-	public int wordSize() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public IRStm procEntryExit1(IRStm body) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public X86SimFrame newSimFrame(Interp interp, List<Word> args) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }
