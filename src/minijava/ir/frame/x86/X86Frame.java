@@ -9,6 +9,7 @@ import minijava.ir.temp.Label;
 import minijava.ir.temp.Temp;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
+import minijava.ir.tree.TEMP;
 import minijava.util.IndentingWriter;
 import minijava.util.List;
 
@@ -61,23 +62,20 @@ public class X86Frame extends Frame {
 	@Override
 	public Access allocLocal(boolean escapes)
 	{
-		// TODO Auto-generated method stub
-	  ++this.localCount;
-		return null;
+		return (escapes) ?  new X86InFrame(-(this.wordSize() * this.localCount++)) :
+		                    new X86InReg(new Temp());
 	}
 
 	@Override
 	public IRExp FP()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return new TEMP(new Temp("ebp"));
 	}
 
 	@Override
 	public IRExp RV()
 	{
-		// TODO Auto-generated method stub
-		return null;
+    return new TEMP(new Temp("eax"));
 	}
 
 	@Override
