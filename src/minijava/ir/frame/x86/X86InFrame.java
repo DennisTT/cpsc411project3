@@ -1,6 +1,8 @@
 package minijava.ir.frame.x86;
 
 import minijava.ir.frame.Access;
+import minijava.ir.tree.BINOP.Op;
+import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 
 public class X86InFrame extends Access
@@ -21,7 +23,6 @@ public class X86InFrame extends Access
   @Override
   public IRExp exp(IRExp fp)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return IR.MEM(IR.BINOP(Op.PLUS, fp, IR.CONST(this.offset)));
   }
 }

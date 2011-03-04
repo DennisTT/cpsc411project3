@@ -22,7 +22,6 @@ public class X86InReg extends Access
   @Override
   public IRExp exp(IRExp fp)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return fp;
   }
 }
