@@ -15,8 +15,7 @@ public class X86InFrame extends Access
   @Override
   public String toString()
   {
-    // TODO Auto-generated method stub
-    return null;
+    return String.valueOf(this.offset);
   }
   
   @Override
@@ -25,5 +24,4 @@ public class X86InFrame extends Access
     // TODO Auto-generated method stub
     return null;
   }
-  
 }

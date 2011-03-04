@@ -16,8 +16,7 @@ public class X86InReg extends Access
   @Override
   public String toString()
   {
-    // TODO Auto-generated method stub
-    return null;
+    return this.temp.getName();
   }
   
   @Override
@@ -26,5 +25,4 @@ public class X86InReg extends Access
     // TODO Auto-generated method stub
     return null;
   }
-  
 }
