@@ -5,6 +5,7 @@ import minijava.ir.frame.Frame;
 import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
+import minijava.ir.tree.BINOP.Op;
 import minijava.translate.Fragments;
 import minijava.translate.ProcFragment;
 import minijava.translate.Translator;
@@ -160,8 +161,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Plus n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new TranslateEx(IR.BINOP(Op.PLUS,
+                                    n.e1.accept(this).unEx(),
+                                    n.e2.accept(this).unEx()));
   }
 
   @Override
