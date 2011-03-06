@@ -75,7 +75,37 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(MethodDecl n)
   {
-    // TODO Auto-generated method stub
+    List<Boolean> frameParams = List.theEmpty();
+    int numFormals = n.formals.size();
+    for(int i = 0; i < numFormals; ++i)
+    {
+      frameParams.add(false);
+    }
+    this.frames.push(this.createNewFrame(Label.get(n.name), frameParams));
+    
+    IRExp e = null;
+    
+    // Check if block is empty, a single statement, or multiple statements
+    int numStatements = n.statements.size();
+    if(numStatements > 0)
+    {
+      IRStm s = n.statements.elementAt(0).accept(this).unNx();
+      
+      // Generate SEQ instructions chain if method contains multiple statements
+      if(numStatements > 1)
+      {
+        for(int i = 1; i < numStatements; ++i)
+        {
+          s = IR.SEQ(s, n.statements.elementAt(i).accept(this).unNx());
+        }
+      }
+      
+      e = IR.ESEQ(s, n.returnExp.accept(this).unEx());
+    }
+    
+    this.procEntryExit(new TranslateEx(e));
+    this.frames.pop();
+    
     return null;
   }
 
