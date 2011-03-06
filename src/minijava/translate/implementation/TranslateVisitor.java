@@ -106,8 +106,23 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Block n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    IRStm s     = IR.NOP;
+    int length  = n.statements.size();
+    
+    // Check if block is empty, a single statement, or multiple statements
+    // An empty block defaults to a No-Op
+    if(length > 0)
+    {
+      s = n.statements.elementAt(0).accept(this).unNx();
+      
+      // Generate SEQ instructions chain if block contains multiple statements
+      for(int i = 1; i < length; ++i)
+      {
+        s = IR.SEQ(s, n.statements.elementAt(i).accept(this).unNx());
+      }
+    }
+    
+    return new TranslateNx(s);
   }
 
   @Override
