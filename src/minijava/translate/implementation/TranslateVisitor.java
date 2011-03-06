@@ -2,7 +2,13 @@ package minijava.translate.implementation;
 
 import minijava.ast.*;
 import minijava.ir.frame.Frame;
+import minijava.ir.tree.IR;
+import minijava.ir.tree.IRExp;
+import minijava.ir.tree.IRStm;
 import minijava.translate.Fragments;
+import minijava.translate.ProcFragment;
+import minijava.translate.Translator;
+import minijava.util.List;
 import minijava.visitor.Visitor;
 
 public class TranslateVisitor implements Visitor<TranslateExp>
@@ -27,21 +33,29 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Program n)
   {
-    // TODO Auto-generated method stub
+    n.mainClass.accept(this);
+    n.classes.accept(this);
+    
     return null;
   }
   
   @Override
   public TranslateExp visit(MainClass n)
   {
-    // TODO Auto-generated method stub
+    List<Boolean> formals = List.empty();
+    Frame frame = this.frameFactory.newFrame(Translator.L_MAIN, formals);
+    this.fragments.add(new ProcFragment(frame,
+                                        this.procEntryExit( frame,
+                                                            n.statement.accept(this))));
     return null;
   }
 
   @Override
   public TranslateExp visit(ClassDecl n)
   {
-    // TODO Auto-generated method stub
+    n.vars.accept(this);
+    n.methods.accept(this);
+    
     return null;
   }
 
@@ -232,5 +246,16 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   {
     // TODO Auto-generated method stub
     return null;
+  }
+  
+  // Helper method for setting frame state for exiting methods
+  private IRStm procEntryExit(Frame frame, TranslateExp body)
+  {
+    // Treat empty method blocks as No-Ops
+    if(body == null) { return IR.NOP; }
+    
+    // Set method return value (if necessary)
+    IRExp e = body.unEx();
+    return (e != null) ? IR.MOVE(frame.RV(), e) : body.unNx();
   }
 }
