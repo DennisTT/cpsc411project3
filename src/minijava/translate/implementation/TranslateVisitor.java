@@ -208,8 +208,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(BooleanLiteral n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new TranslateEx((n.value) ? IR.TRUE : IR.FALSE);
   }
 
   @Override
