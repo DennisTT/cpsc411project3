@@ -163,8 +163,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Plus n)
   {
-    return new TranslateEx(IR.BINOP(Op.PLUS,
-                                    n.e1.accept(this).unEx(),
+    return new TranslateEx(IR.PLUS( n.e1.accept(this).unEx(),
                                     n.e2.accept(this).unEx()));
   }
 
