@@ -2,6 +2,7 @@ package minijava.translate.implementation;
 
 import minijava.ast.*;
 import minijava.ir.frame.Frame;
+import minijava.ir.temp.Temp;
 import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
@@ -126,8 +127,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Print n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new TranslateNx(IR.MOVE( IR.TEMP(new Temp()),
+                                    IR.CALL(Translator.L_PRINT,
+                                            n.exp.accept(this).unEx())));
   }
 
   @Override
