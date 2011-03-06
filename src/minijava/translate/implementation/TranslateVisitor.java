@@ -178,8 +178,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Times n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new TranslateEx(IR.BINOP(Op.MUL,
+                                    n.e1.accept(this).unEx(),
+                                    n.e2.accept(this).unEx()));
   }
 
   @Override
