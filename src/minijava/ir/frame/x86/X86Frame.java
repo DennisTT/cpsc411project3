@@ -88,8 +88,7 @@ public class X86Frame extends Frame {
   @Override
   public IRStm procEntryExit1(IRStm body)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return body;
   }
   
   @Override

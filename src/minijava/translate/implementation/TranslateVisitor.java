@@ -1,7 +1,10 @@
 package minijava.translate.implementation;
 
+import java.util.Stack;
+
 import minijava.ast.*;
 import minijava.ir.frame.Frame;
+import minijava.ir.temp.Label;
 import minijava.ir.temp.Temp;
 import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
@@ -15,13 +18,13 @@ import minijava.visitor.Visitor;
 
 public class TranslateVisitor implements Visitor<TranslateExp>
 {
-  private Frame     frameFactory;
-  private Fragments fragments;
+  private Stack<Frame>  frames = new Stack<Frame>();
+  private Fragments     fragments;
   
   public TranslateVisitor(Frame frameFactory, Fragments fragments)
   {
-    this.frameFactory = frameFactory;
-    this.fragments    = fragments;
+    this.frames.push(frameFactory);
+    this.fragments = fragments;
   }
   
   @Override
@@ -44,11 +47,12 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(MainClass n)
   {
-    List<Boolean> formals = List.empty();
-    Frame frame = this.frameFactory.newFrame(Translator.L_MAIN, formals);
-    this.fragments.add(new ProcFragment(frame,
-                                        this.procEntryExit( frame,
-                                                            n.statement.accept(this))));
+    List<Boolean> frameParams = List.empty();
+    this.frames.push(this.createNewFrame(Translator.L_MAIN, frameParams));
+    this.fragments.add(new ProcFragment(this.frames.peek(),
+                                        this.procEntryExit(n.statement.accept(this))));
+    this.frames.pop();
+    
     return null;
   }
 
@@ -266,14 +270,25 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     return new TranslateEx(IR.BINOP(Op.MINUS, IR.CONST(1), not.e.accept(this).unEx()));
   }
   
-  // Helper method for setting frame state for exiting methods
-  private IRStm procEntryExit(Frame frame, TranslateExp body)
+  private Frame createNewFrame(Label name, List<Boolean> formalsEscape)
   {
-    // Treat empty method blocks as No-Ops
-    if(body == null) { return IR.NOP; }
+    return this.frames.peek().newFrame(name, formalsEscape);
+  }
+  
+  // Helper method for updating the current frame's state upon exiting a method
+  private IRStm procEntryExit(TranslateExp body)
+  {
+    Frame currentFrame = this.frames.peek();
     
-    // Set method return value (if necessary)
-    IRExp e = body.unEx();
-    return (e != null) ? IR.MOVE(frame.RV(), e) : body.unNx();
+    // Treat empty method blocks as No-Ops
+    IRStm s = IR.NOP;
+    if(body != null)
+    {
+      // Set method return value (if necessary)
+      IRExp e = body.unEx();
+      s = (e != null) ? IR.MOVE(currentFrame.RV(), e) : body.unNx();
+    }
+    
+    return currentFrame.procEntryExit1(s);
   }
 }
