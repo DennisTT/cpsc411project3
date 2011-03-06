@@ -12,14 +12,16 @@ import minijava.visitor.Visitor;
 
 public class TypeCheckVisitor implements Visitor<TypeChecked>
 {
+  private AST             program;
   private FunTable<Info>  table;
   private ErrorReport     error;
   
   private String          currentClass,
                           currentMethod;
   
-  public TypeCheckVisitor(FunTable<Info> table, ErrorReport error)
+  public TypeCheckVisitor(AST program, FunTable<Info> table, ErrorReport error)
   {
+    this.program = program;
     this.table = table;
     this.error = error;
   }
@@ -30,7 +32,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     // Iterate all nodes and perform type checking
     for(int i = 0; i < ns.size(); ++i) { ns.elementAt(i).accept(this); }
     
-    return new TypeCheckedImplementation(null);
+    return this.createTypeChecked(null);
   }
 
   @Override
@@ -44,7 +46,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     this.currentClass = null;
     this.currentMethod = null;
     
-    return new TypeCheckedImplementation(null);
+    return this.createTypeChecked(null);
   }
 
   @Override
@@ -160,7 +162,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     // Reset class context
     this.currentClass = null;
     
-    return new TypeCheckedImplementation(null);
+    return this.createTypeChecked(null);
   }
 
   @Override
@@ -186,7 +188,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(type);
+    return this.createTypeChecked(type);
   }
 
   @Override
@@ -328,25 +330,25 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
   @Override
   public TypeChecked visit(IntArrayType n)
   {
-    return new TypeCheckedImplementation(n);
+    return this.createTypeChecked(n);
   }
 
   @Override
   public TypeChecked visit(BooleanType n)
   {
-    return new TypeCheckedImplementation(n);
+    return this.createTypeChecked(n);
   }
 
   @Override
   public TypeChecked visit(IntegerType n)
   {
-    return new TypeCheckedImplementation(n);
+    return this.createTypeChecked(n);
   }
 
   @Override
   public TypeChecked visit(ObjectType n)
   {
-    return new TypeCheckedImplementation(n);
+    return this.createTypeChecked(n);
   }
 
   @Override
@@ -477,7 +479,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(new IntegerType());
+    return this.createTypeChecked(new IntegerType());
   }
 
   @Override
@@ -525,7 +527,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(new BooleanType());
+    return this.createTypeChecked(new BooleanType());
   }
 
   @Override
@@ -620,7 +622,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(new IntegerType());
+    return this.createTypeChecked(new IntegerType());
   }
 
   @Override
@@ -635,7 +637,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(new IntegerType());
+    return this.createTypeChecked(new IntegerType());
   }
 
   @Override
@@ -728,19 +730,19 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       }
     }
     
-    return new TypeCheckedImplementation(m.returnType);
+    return this.createTypeChecked(m.returnType);
   }
 
   @Override
   public TypeChecked visit(IntegerLiteral n)
   {
-    return new TypeCheckedImplementation(new IntegerType());
+    return this.createTypeChecked(new IntegerType());
   }
 
   @Override
   public TypeChecked visit(BooleanLiteral n)
   {
-    return new TypeCheckedImplementation(new BooleanType());
+    return this.createTypeChecked(new BooleanType());
   }
 
   @Override
@@ -750,19 +752,19 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     VarInfo v = this.lookupVarInfo(n.name);
     if(v == null) { return null; }
     
-    return new TypeCheckedImplementation(v.type);
+    return this.createTypeChecked(v.type);
   }
 
   @Override
   public TypeChecked visit(This n)
   {
-    return new TypeCheckedImplementation(new ObjectType(this.currentClass));
+    return this.createTypeChecked(new ObjectType(this.currentClass));
   }
 
   @Override
   public TypeChecked visit(NewArray n)
   {
-    return new TypeCheckedImplementation(new IntArrayType());
+    return this.createTypeChecked(new IntArrayType());
   }
 
   @Override
@@ -776,7 +778,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return new TypeCheckedImplementation(new ObjectType(n.typeName));
+    return this.createTypeChecked(new ObjectType(n.typeName));
   }
 
   @Override
@@ -849,5 +851,10 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     }
     
     return (VarInfo) v;
+  }
+  
+  private TypeChecked createTypeChecked(Type t)
+  {
+    return new TypeCheckedImplementation(t, this.program, this.table);
   }
 }

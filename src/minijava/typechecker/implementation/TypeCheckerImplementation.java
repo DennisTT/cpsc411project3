@@ -21,7 +21,9 @@ public class TypeCheckerImplementation {
     this.buildClassTable();
     
     ErrorReport e = new ErrorReport();
-	  TypeChecked t = this.program.accept(new TypeCheckVisitor(this.classTable, e));
+	  TypeChecked t = this.program.accept(new TypeCheckVisitor( this.program,
+	                                                            this.classTable,
+	                                                            e));
     e.close();
 	  return t;
 	}
