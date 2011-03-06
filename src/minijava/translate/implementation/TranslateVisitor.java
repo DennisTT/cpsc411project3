@@ -246,7 +246,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Not not)
   {
-    // Subtracting 1 from a boolean bit results in the bit being flipped
+    // Subtracting 1 by a boolean bit results in the bit being flipped
     return new TranslateEx(IR.BINOP(Op.MINUS, IR.CONST(1), not.e.accept(this).unEx()));
   }
   
