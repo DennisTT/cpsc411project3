@@ -78,28 +78,28 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(IntArrayType n)
   {
-    // TODO Auto-generated method stub
+    // No translation required
     return null;
   }
 
   @Override
   public TranslateExp visit(BooleanType n)
   {
-    // TODO Auto-generated method stub
+    // No translation required
     return null;
   }
 
   @Override
   public TranslateExp visit(IntegerType n)
   {
-    // TODO Auto-generated method stub
+    // No translation required
     return null;
   }
 
   @Override
   public TranslateExp visit(ObjectType n)
   {
-    // TODO Auto-generated method stub
+    // No translation required
     return null;
   }
 
