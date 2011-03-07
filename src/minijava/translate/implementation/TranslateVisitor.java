@@ -253,9 +253,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     Access var = this.lookupVar(n.name);
     if(var == null) { return null; }
     
-    return new TranslateNx(IR.MOVE(IR.PLUS( IR.MEM(var.exp(this.frames.peek().FP())),
-                                            n.index.accept(this).unEx()),
-                                            n.value.accept(this).unEx()));
+    return new TranslateNx(IR.MOVE(IR.MEM(IR.PLUS(var.exp(this.frames.peek().FP()),
+                                                  IR.MUL(n.index.accept(this).unEx(), this.frames.peek().wordSize()))),
+                                   n.value.accept(this).unEx()));
   }
 
   @Override
@@ -300,13 +300,17 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(ArrayLookup n)
   {
     return new TranslateEx(IR.MEM(IR.PLUS(n.array.accept(this).unEx(),
-                                          n.index.accept(this).unEx())));
+                                          IR.MUL( n.index.accept(this).unEx(), 
+                                                  this.frames.peek().wordSize()))));
   }
 
   @Override
   public TranslateExp visit(ArrayLength n)
   {
-    return new TranslateEx(IR.MEM(this.frames.peek().FP()));
+    // Array IR gives us the pointer to the 0 element of the array
+    // Length is one offset before this pointer. 
+    return new TranslateEx(IR.MEM(IR.MINUS( n.array.accept(this).unEx(), 
+                                            this.frames.peek().wordSize())));
   }
 
   @Override
@@ -352,9 +356,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(NewArray n)
   {
     IRExp r       = IR.TEMP(new Temp()),
-          callNew = IR.CALL(Translator.L_NEW_OBJECT,
-                            List.list(IR.PLUS(IR.MUL(n.size.accept(this).unEx(), this.frames.peek().wordSize()),
-                                              IR.CONST(this.frames.peek().wordSize()))));
+          callNew = IR.CALL(Translator.L_NEW_ARRAY,
+                            List.list(n.size.accept(this).unEx()));
     
     return new TranslateEx(IR.ESEQ(IR.MOVE(r, callNew), r));
   }
