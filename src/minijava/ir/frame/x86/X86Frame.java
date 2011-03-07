@@ -37,7 +37,22 @@ public class X86Frame extends Frame {
   @Override
   public void dump(IndentingWriter out)
   {
-    // TODO Auto-generated method stub
+    out.println("X86Frame {");
+    out.indent();
+    
+    out.print("label : ");
+    out.println(this.getLabel());
+    
+    out.println("formals : ");
+    out.indent();
+    for(Access formal : this.getFormals())
+    {
+      out.println(formal);
+    }
+    out.outdent();
+    
+    out.outdent();
+    out.print("}");
   }
   
   @Override
