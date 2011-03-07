@@ -2,6 +2,7 @@ package minijava.ir.frame.x86;
 
 import minijava.ir.frame.Access;
 import minijava.ir.temp.Temp;
+import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 
 public class X86InReg extends Access
@@ -22,6 +23,6 @@ public class X86InReg extends Access
   @Override
   public IRExp exp(IRExp fp)
   {
-    return fp;
+    return IR.TEMP(temp);
   }
 }

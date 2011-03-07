@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
 
+import junit.framework.Assert;
+
 import minijava.ast.*;
 import minijava.ir.frame.Access;
 import minijava.ir.frame.Frame;
@@ -101,6 +103,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(MethodDecl n)
   {
+    this.currentMethod = n.name;
+    
     this.addClassMethod(n.name);
     
     List<Boolean> frameParams = List.empty();
@@ -108,9 +112,10 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     for(int i = 0; i < numFormals; ++i)
     {
       frameParams.add(false);
+      this.addFormal(n.formals.elementAt(i).name);
     }
     this.frames.push(this.createNewFrame(Label.get(n.name), frameParams));
-    this.currentMethod = n.name;
+    
     
     n.vars.accept(this);
     
@@ -335,6 +340,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(This n)
   {
     // TODO Auto-generated method stub
+    Assert.assertTrue("This not implemented", false);
     return null;
   }
 
@@ -343,8 +349,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   {
     IRExp r       = IR.TEMP(new Temp()),
           callNew = IR.CALL(Translator.L_NEW_OBJECT,
-                            List.list(IR.PLUS(n.size.accept(this).unEx(),
-                                              IR.CONST(1))));
+                            List.list(IR.PLUS(IR.MUL(n.size.accept(this).unEx(), this.frames.peek().wordSize()),
+                                              IR.CONST(this.frames.peek().wordSize()))));
     
     return new TranslateEx(IR.ESEQ(IR.MOVE(r, callNew), r));
   }
@@ -403,6 +409,19 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     this.symbols.addClassMethod(this.currentClass, methodName);
   }
   
+  private Access addFormal(String id)
+  {
+    Assert.assertNotNull(this.currentMethod);
+    
+    Access var;
+    // Allocate method variable on current frame
+    var = this.frames.peek().allocLocal(false);
+    this.symbols.addClassMethodVar( this.currentClass,
+                                    this.currentMethod,
+                                    id,
+                                    var);
+    return var;
+  }
   private Access addVar(String id)
   {
     Access var;
