@@ -19,9 +19,9 @@ public class X86Frame extends Frame {
   
   public static X86Frame factory = new X86Frame(null, null);
   
-  protected int localCount = 0;
+  private int localCount = 0;
   
-  protected X86Frame(Label label, List<Access> formals)
+  private X86Frame(Label label, List<Access> formals)
   {
     super(label, formals);
   }
@@ -88,7 +88,7 @@ public class X86Frame extends Frame {
   @Override
   public IRStm procEntryExit1(IRStm body)
   {
-    return body;
+    return IR.SEQ(IR.LABEL(this.getLabel()), body);
   }
   
   @Override
