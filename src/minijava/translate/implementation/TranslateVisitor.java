@@ -1,6 +1,7 @@
 package minijava.translate.implementation;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
 
@@ -14,6 +15,7 @@ import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
 import minijava.ir.tree.BINOP.Op;
+import minijava.translate.Fragment;
 import minijava.translate.Fragments;
 import minijava.translate.ProcFragment;
 import minijava.translate.Translator;
@@ -22,7 +24,8 @@ import minijava.visitor.Visitor;
 
 public class TranslateVisitor implements Visitor<TranslateExp>
 {
-  private Fragments     fragments;
+  private Fragments     fragments,
+                        classFragments;
   
   private Stack<Frame>  frames = new Stack<Frame>();
   private SymbolTable   symbols = new SymbolTable();
@@ -33,6 +36,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   {
     this.frames.push(frameFactory);
     this.fragments = fragments;
+    this.classFragments = new Fragments(frameFactory);
   }
   
   @Override
@@ -46,8 +50,16 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Program n)
   {
+    // Make sure class declarations are defined before mainClass is visited
     n.classes.accept(this);
     n.mainClass.accept(this);
+    
+    // Make sure mainClass Fragment from is defined before class Fragments
+    Iterator<Fragment> it = this.classFragments.iterator();
+    while(it.hasNext())
+    {
+      this.fragments.add(it.next());
+    }
     
     return null;
   }
@@ -126,8 +138,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
       e = n.returnExp.accept(this).unEx();
     }
     
-    this.fragments.add(new ProcFragment(this.frames.peek(),
-                                        this.procEntryExit(new TranslateEx(e))));
+    this.classFragments.add(new ProcFragment( this.frames.peek(),
+                                              this.procEntryExit(new TranslateEx(e))));
     this.currentMethod = null;
     this.frames.pop();
     
