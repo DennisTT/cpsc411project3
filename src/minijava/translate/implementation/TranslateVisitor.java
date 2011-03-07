@@ -228,8 +228,12 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(ArrayAssign n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    Access var = this.lookupVar(n.name);
+    if(var == null) { return null; }
+    
+    return new TranslateNx(IR.MOVE(IR.PLUS( IR.MEM(var.exp(this.frames.peek().FP())),
+                                            n.index.accept(this).unEx()),
+                                            n.value.accept(this).unEx()));
   }
 
   @Override
