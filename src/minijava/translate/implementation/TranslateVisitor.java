@@ -277,8 +277,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(ArrayLookup n)
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new TranslateEx(IR.MEM(IR.PLUS(n.array.accept(this).unEx(),
+                                          n.index.accept(this).unEx())));
   }
 
   @Override
