@@ -340,15 +340,14 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     Access var = this.lookupVar(n.name);
     return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
   }
-
+  
   @Override
   public TranslateExp visit(This n)
   {
-    // TODO Auto-generated method stub
-    Assert.assertTrue("This not implemented", false);
-    return null;
+    Access var = this.lookupVar("this");
+    return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
   }
-
+  
   @Override
   public TranslateExp visit(NewArray n)
   {
