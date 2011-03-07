@@ -108,14 +108,19 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     this.addClassMethod(n.name);
     
     List<Boolean> frameParams = List.empty();
-    int numFormals = n.formals.size();
+    int numFormals = n.formals.size() + 1;
     for(int i = 0; i < numFormals; ++i)
     {
-      frameParams.add(false);
-      this.addFormal(n.formals.elementAt(i).name);
+      frameParams.add(true);
     }
     this.frames.push(this.createNewFrame(Label.get(n.name), frameParams));
     
+    // Keep track of formal variables
+    this.addFormal(0, "this");
+    for(int j = 0; j < numFormals - 1; ++j)
+    {
+      this.addFormal(j + 1, n.formals.elementAt(j).name);
+    }
     
     n.vars.accept(this);
     
@@ -409,19 +414,18 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     this.symbols.addClassMethod(this.currentClass, methodName);
   }
   
-  private Access addFormal(String id)
+  private Access addFormal(int i, String id)
   {
     Assert.assertNotNull(this.currentMethod);
     
-    Access var;
-    // Allocate method variable on current frame
-    var = this.frames.peek().allocLocal(false);
+    Access var = this.frames.peek().getFormal(i);
     this.symbols.addClassMethodVar( this.currentClass,
                                     this.currentMethod,
                                     id,
                                     var);
     return var;
   }
+  
   private Access addVar(String id)
   {
     Access var;
