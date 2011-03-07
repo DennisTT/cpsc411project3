@@ -19,6 +19,9 @@ public class X86Frame extends Frame {
   
   public static X86Frame factory = new X86Frame(null, null);
   
+  private static Temp fp = new Temp("ebp"),
+                      rv = new Temp("eax");
+  
   private int localCount = 0;
   
   private X86Frame(Label label, List<Access> formals)
@@ -69,13 +72,13 @@ public class X86Frame extends Frame {
   @Override
   public IRExp FP()
   {
-    return IR.TEMP(new Temp("ebp"));
+    return IR.TEMP(fp);
   }
   
   @Override
   public IRExp RV()
   {
-    return IR.TEMP(new Temp("eax"));
+    return IR.TEMP(rv);
   }
   
   @Override
