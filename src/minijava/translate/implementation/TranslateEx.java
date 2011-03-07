@@ -4,6 +4,7 @@ import minijava.ir.temp.Label;
 import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
+import minijava.ir.tree.CJUMP.RelOp;
 
 public class TranslateEx extends TranslateExp
 {
@@ -39,6 +40,6 @@ public class TranslateEx extends TranslateExp
       return IR.JUMP(f);
     }
     
-    return null;
+    return IR.CJUMP(RelOp.EQ, e, IR.TRUE, t, f);
   }
 }
