@@ -23,7 +23,7 @@ public class AndCx extends TranslateCx
     
     return IR.SEQ( IR.CJUMP(RelOp.EQ, e1.unEx(), IR.TRUE, e2Test, f),
                             IR.LABEL(e2Test),
-                            IR.CJUMP(RelOp.EQ, e2.unEx(), IR.TRUE, t, f));
+                            e2.unCx(t, f));
   }
 
 }
