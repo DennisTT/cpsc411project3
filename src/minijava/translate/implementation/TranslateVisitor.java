@@ -367,21 +367,12 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(NewObject n)
   {
-    Set<String> vars = this.lookupClassVars(n.typeName);
-    int varsSize = (vars != null) ? ((vars.size() + 1) * this.frames.peek().wordSize()) : 0;
-    IRExp r = IR.TEMP(new Temp()),
-          callNew = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(varsSize)));
+    Set<String> vars      = this.lookupClassVars(n.typeName);
+    int         varsSize  = (vars != null) ? ((vars.size() + 1) * this.frames.peek().wordSize()) : 0;
+    IRExp       r         = IR.TEMP(new Temp()),
+                callNew   = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(varsSize)));
     
-    // Initialize object
-    IRStm s = IR.NOP;
-//    int i = 0;
-//    while(it.hasNext())
-//    {
-//      IRStm m = IR.MOVE(IR.MEM(IR.PLUS(r, IR.CONST(wordSize * i++))), n.);
-//      s = (s != null) ? IR.SEQ(s, m) : m;
-//    }
-    
-    return new TranslateEx(IR.ESEQ(IR.SEQ(IR.MOVE(r, callNew), s), r));
+    return new TranslateEx(IR.ESEQ(IR.MOVE(r, callNew), r));
   }
 
   @Override
@@ -444,8 +435,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     }
     else
     {
-      var = this.frames.peek().allocLocal(true);
       // Allocate class variable on current frame
+      var = this.frames.peek().allocLocal(true);
       this.symbols.addClassVar( this.currentClass,
                                 id,
                                 var);
