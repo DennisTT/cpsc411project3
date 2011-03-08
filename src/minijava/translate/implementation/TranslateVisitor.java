@@ -413,12 +413,15 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(NewObject n)
   {
-    Set<String> v = this.lookupClassVars(n.typeName);
-    int         s = (v != null) ? ((v.size() + 1) * this.frames.peek().wordSize()) : 0;
+    int         s = Math.max(this.symbols.numClassVars(n.typeName) * this.frames.peek().wordSize(), this.frames.peek().wordSize());
     IRExp       r = IR.TEMP(new Temp()),
                 c = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
-    
-    return new TranslateEx(IR.ESEQ(IR.MOVE(r, c), r));
+    IRStm seq = IR.MOVE(r, c);
+    for(int i = 0; i < this.symbols.numClassVars(n.typeName); ++i)
+    {
+      seq = IR.SEQ(seq, IR.MOVE(IR.MEM(IR.PLUS(r, i * this.frames.peek().wordSize())), IR.CONST(0)));
+    }
+    return new TranslateEx(IR.ESEQ(seq, r));
   }
 
   @Override
