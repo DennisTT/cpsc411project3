@@ -413,15 +413,11 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(NewObject n)
   {
-    int         s = Math.max(this.symbols.numClassVars(n.typeName) * this.frames.peek().wordSize(), this.frames.peek().wordSize());
-    IRExp       r = IR.TEMP(new Temp()),
-                c = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
-    IRStm seq = IR.MOVE(r, c);
-    for(int i = 0; i < this.symbols.numClassVars(n.typeName); ++i)
-    {
-      seq = IR.SEQ(seq, IR.MOVE(IR.MEM(IR.PLUS(r, i * this.frames.peek().wordSize())), IR.CONST(0)));
-    }
-    return new TranslateEx(IR.ESEQ(seq, r));
+    int   s = (this.symbols.numClassVars(n.typeName) + 1) * this.frames.peek().wordSize();
+    IRExp r = IR.TEMP(new Temp()),
+          c = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
+    
+    return new TranslateEx(IR.ESEQ(IR.MOVE(r, c), r));
   }
 
   @Override
@@ -478,33 +474,21 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   // specified identifier
   private IRExp getVarLocation(String id)
   {
-    IRExp p;
+    IRExp p = this.frames.peek().FP();
     
     // Check to see if identifier is a local method variable
     Access var = this.lookupMethodVar(id);
-    if(var != null)
-    {
-      // Method variable found
-      p = this.frames.peek().FP();
-    }
-    else
+    if(var == null)
     {
       // Check to see if identifier is a class variable
       var = this.lookupClassVar(id);
       if(var == null) { return null; }
       
       // Class variable found
-      Access thisVar = this.lookupVar("this");
-      p = thisVar.exp(this.frames.peek().FP());
+      p = this.lookupVar("this").exp(p);
     }
     
     return var.exp(p);
-  }
-  
-  // Attempts to find the specified class in the symbol table
-  private Set<String> lookupClassVars(String className)
-  {
-    return this.symbols.lookupClassVars(className);
   }
   
   private Access lookupClassVar(String id)
