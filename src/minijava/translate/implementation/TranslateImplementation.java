@@ -20,7 +20,8 @@ public class TranslateImplementation
   
   public Fragments translate()
   {
-    this.t.program.accept(new TranslateVisitor(this.factory, this.fragments));
+    SymbolTable st = this.t.program.accept(new SymbolTableBuilderVisitor(this.factory, this.fragments));
+    this.t.program.accept(new TranslateVisitor(this.factory, this.fragments, st));
     return this.fragments;
   }
 }

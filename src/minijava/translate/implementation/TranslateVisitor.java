@@ -29,15 +29,16 @@ public class TranslateVisitor implements Visitor<TranslateExp>
                         classFragments;
   
   private Stack<Frame>  frames = new Stack<Frame>();
-  private SymbolTable   symbols = new SymbolTable();
+  private SymbolTable   symbols;
   private String        currentClass,
                         currentMethod;
   
-  public TranslateVisitor(Frame frameFactory, Fragments fragments)
+  public TranslateVisitor(Frame frameFactory, Fragments fragments, SymbolTable symbols)
   {
     this.frames.push(frameFactory);
     this.fragments = fragments;
     this.classFragments = new Fragments(frameFactory);
+    this.symbols = symbols;
   }
   
   @Override
@@ -96,22 +97,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(VarDecl n)
   {
-    Access var;
-    
-    if(this.currentMethod != null)
-    {
-      // Allocate local method variable on current frame
-      var = this.frames.peek().allocLocal(false);
-      this.symbols.addClassMethodVar( this.currentClass,
-                                      this.currentMethod,
-                                      n.name,
-                                      var);
-      return new TranslateEx(var.exp(this.frames.peek().FP()));
-    }
-
-    // Allocate class variable
-    var = this.frames.peek().alloc(this.symbols.numClassVars(this.currentClass) * this.frames.peek().wordSize());
-    this.symbols.addClassVar(this.currentClass, n.name, var);
+    // No translation required
     return null;
   }
 
@@ -119,8 +105,6 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(MethodDecl n)
   {
     this.currentMethod = n.name;
-    
-    this.addClassMethod(n.name);
     
     // Include implicit argument for "this" in method frame
     List<Boolean> frameParams = List.list(true);
@@ -130,17 +114,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
       frameParams.add(true);
     }
     this.frames.push(this.createNewFrame(Label.get(n.name), frameParams));
-    
-    // Keep track of formal variables
-    this.addFormal(0, "this");
-    for(int j = 0; j < numFormals; ++j)
-    {
-      this.addFormal(j + 1, n.formals.elementAt(j).name);
-    }
-    
-    // Allocate space for variables
-    n.vars.accept(this);
-    
+  
     IRExp e = null;
     
     // Check if block is empty, a single statement, or multiple statements
