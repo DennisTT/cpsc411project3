@@ -49,9 +49,8 @@ public class IfThenElseExp extends TranslateExp
   @Override
   public IRStm unCx(Label t, Label f)
   {
-    // This method should never be called
+    // This method should never be called for IfThenElseExp
     // Do nothing
-    Assert.assertTrue("unCx should not be called for IfThenElseExp.", false);
     return null;
   }
 }
