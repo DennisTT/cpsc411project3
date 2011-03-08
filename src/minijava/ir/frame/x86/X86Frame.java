@@ -14,7 +14,7 @@ import minijava.util.IndentingWriter;
 import minijava.util.List;
 
 public class X86Frame extends Frame {
-  public static final int FIRST_FORMAL_OFFSET = 4;
+  public static final int FIRST_FORMAL_OFFSET = 8;
   public static final int FORMAL_INCREMENT = 4;
   
   public static X86Frame factory = new X86Frame(null, null);
@@ -100,7 +100,7 @@ public class X86Frame extends Frame {
   public int wordSize()
   {
     // x86 supports 32-bit addressing (4 bytes)
-    return 4;
+    return FORMAL_INCREMENT;
   }
   
   @Override
@@ -113,5 +113,10 @@ public class X86Frame extends Frame {
   public X86SimFrame newSimFrame(Interp interp, List<Word> args)
   {
     return new X86SimFrame(interp, factory, args);
+  }
+  
+  public Access alloc(int offset)
+  {
+    return new X86InFrame(offset);
   }
 }

@@ -1,6 +1,5 @@
 package minijava.translate.implementation;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
@@ -97,7 +96,23 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(VarDecl n)
   {
-    return new TranslateEx(this.addVar(n.name).exp(this.frames.peek().FP()));
+    Access var;
+    
+    if(this.currentMethod != null)
+    {
+      // Allocate local method variable on current frame
+      var = this.frames.peek().allocLocal(false);
+      this.symbols.addClassMethodVar( this.currentClass,
+                                      this.currentMethod,
+                                      n.name,
+                                      var);
+      return new TranslateEx(var.exp(this.frames.peek().FP()));
+    }
+
+    // Allocate class variable
+    var = this.frames.peek().alloc(this.symbols.numClassVars(this.currentClass) * this.frames.peek().wordSize());
+    this.symbols.addClassVar(this.currentClass, n.name, var);
+    return null;
   }
 
   @Override
@@ -107,8 +122,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     
     this.addClassMethod(n.name);
     
-    List<Boolean> frameParams = List.empty();
-    int numFormals = n.formals.size() + 1;
+    // Include implicit argument for "this" in method frame
+    List<Boolean> frameParams = List.list(true);
+    int numFormals = n.formals.size();
     for(int i = 0; i < numFormals; ++i)
     {
       frameParams.add(true);
@@ -117,11 +133,12 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     
     // Keep track of formal variables
     this.addFormal(0, "this");
-    for(int j = 0; j < numFormals - 1; ++j)
+    for(int j = 0; j < numFormals; ++j)
     {
       this.addFormal(j + 1, n.formals.elementAt(j).name);
     }
     
+    // Allocate space for variables
     n.vars.accept(this);
     
     IRExp e = null;
@@ -133,12 +150,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
       IRStm s = n.statements.elementAt(0).accept(this).unNx();
       
       // Generate SEQ instructions chain if method contains multiple statements
-      if(numStatements > 1)
+      for(int i = 1; i < numStatements; ++i)
       {
-        for(int i = 1; i < numStatements; ++i)
-        {
-          s = IR.SEQ(s, n.statements.elementAt(i).accept(this).unNx());
-        }
+        s = IR.SEQ(s, n.statements.elementAt(i).accept(this).unNx());
       }
       
       e = IR.ESEQ(s, n.returnExp.accept(this).unEx());
@@ -238,28 +252,24 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Assign n)
   {
-    Access var = this.lookupVar(n.name);
-    if(var == null) { return null; }
-    
-    IRExp e = n.value.accept(this).unEx();
-    return (this.currentMethod != null) ? new TranslateNx(IR.MOVE(var.exp(this.frames.peek().FP()), e)) :
-                                          new TranslateNx(IR.MOVE(IR.MEM(var.exp(this.frames.peek().FP())),
-                                                                  e));
+    IRExp m = this.getVarLocation(n.name),
+          v = n.value.accept(this).unEx();
+    return (this.currentMethod != null) ? new TranslateNx(IR.MOVE(m, v)) :
+                                          new TranslateNx(IR.MOVE(IR.MEM(m), v));
   }
 
   @Override
   public TranslateExp visit(ArrayAssign n)
   {
-    Access var = this.lookupVar(n.name);
-    if(var == null) { return null; }
+    IRExp m = this.getVarLocation(n.name);
+    if(m == null) { return null; }
     
     int wordSize  = this.frames.peek().wordSize();
     Label l1      = Label.gen(),
           l2      = Label.gen(),
           l3      = Label.gen(),
           l4      = Label.gen();
-    IRExp p       = var.exp(this.frames.peek().FP()),
-          i       = n.index.accept(this).unEx(),
+    IRExp i       = n.index.accept(this).unEx(),
           r       = IR.TEMP(new Temp());
     
     // Perform index bounds checking before assigning value to array memory
@@ -269,9 +279,9 @@ public class TranslateVisitor implements Visitor<TranslateExp>
                                   IR.MOVE(r, IR.FALSE),
                                   IR.JUMP(l4),
                                   IR.LABEL(l2),
-                                  IR.CJUMP(RelOp.LT, i, IR.MEM(IR.MINUS(p, wordSize)), l3, l1),
+                                  IR.CJUMP(RelOp.LT, i, IR.MEM(IR.MINUS(m, wordSize)), l3, l1),
                                   IR.LABEL(l3),
-                                  IR.MOVE(IR.MEM(IR.PLUS(p, IR.MUL(i, wordSize))),
+                                  IR.MOVE(IR.MEM(IR.PLUS(m, IR.MUL(i, wordSize))),
                                           n.value.accept(this).unEx()),
                                   IR.LABEL(l4)));
   }
@@ -352,6 +362,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(Call n)
   {
+    // Build list of arguments to pass to the method
+    // Include implicit argument to "this"
     List<IRExp> args = List.list(n.receiver.accept(this).unEx());
     int length = n.rands.size();
     for(int i = 0; i < length; ++i)
@@ -377,9 +389,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(IdentifierExp n)
   {
-    Access var = this.lookupVar(n.name);
-    Assert.assertNotNull("Identifier " + n + " not found in lookup.", var);
-    return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
+    IRExp m = this.getVarLocation(n.name);
+    return (m != null) ? new TranslateEx(m) : null;
   }
   
   @Override
@@ -393,22 +404,21 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(NewArray n)
   {
-    IRExp r       = IR.TEMP(new Temp()),
-          callNew = IR.CALL(Translator.L_NEW_ARRAY,
-                            List.list(n.size.accept(this).unEx()));
+    IRExp r = IR.TEMP(new Temp()),
+          c = IR.CALL(Translator.L_NEW_ARRAY, List.list(n.size.accept(this).unEx()));
     
-    return new TranslateEx(IR.ESEQ(IR.MOVE(r, callNew), r));
+    return new TranslateEx(IR.ESEQ( IR.MOVE(r, c), r));
   }
 
   @Override
   public TranslateExp visit(NewObject n)
   {
-    Set<String> vars      = this.lookupClassVars(n.typeName);
-    int         varsSize  = (vars != null) ? ((vars.size() + 1) * this.frames.peek().wordSize()) : 0;
-    IRExp       r         = IR.TEMP(new Temp()),
-                callNew   = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(varsSize)));
+    Set<String> v = this.lookupClassVars(n.typeName);
+    int         s = (v != null) ? ((v.size() + 1) * this.frames.peek().wordSize()) : 0;
+    IRExp       r = IR.TEMP(new Temp()),
+                c = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
     
-    return new TranslateEx(IR.ESEQ(IR.MOVE(r, callNew), r));
+    return new TranslateEx(IR.ESEQ(IR.MOVE(r, c), r));
   }
 
   @Override
@@ -417,6 +427,8 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     // Subtracting 1 by a boolean bit results in the bit being flipped
     return new TranslateEx(IR.BINOP(Op.MINUS, IR.CONST(1), not.e.accept(this).unEx()));
   }
+  
+  // ---------------------------------------------------------------------------
   
   private Frame createNewFrame(Label name, List<Boolean> formalsEscape)
   {
@@ -440,11 +452,13 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     return currentFrame.procEntryExit1(s);
   }
   
+  // Adds the specified method as a symbol entry to the current class
   private void addClassMethod(String methodName)
   {
     this.symbols.addClassMethod(this.currentClass, methodName);
   }
   
+  // Adds the specified formal as a symbol entry to the current class method
   private Access addFormal(int i, String id)
   {
     Assert.assertNotNull(this.currentMethod);
@@ -457,150 +471,65 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     return var;
   }
   
-  private Access addVar(String id)
+  // Returns the appropriate IRExp representing the memory location for the
+  // specified identifier
+  private IRExp getVarLocation(String id)
   {
-    Access var;
-    if(this.currentMethod != null)
+    IRExp p;
+    
+    // Check to see if identifier is a local method variable
+    Access var = this.lookupMethodVar(id);
+    if(var != null)
     {
-      // Allocate method variable on current frame
-      var = this.frames.peek().allocLocal(false);
-      this.symbols.addClassMethodVar( this.currentClass,
-                                      this.currentMethod,
-                                      id,
-                                      var);
+      // Method variable found
+      p = this.frames.peek().FP();
     }
     else
     {
-      // Allocate class variable on current frame
-      var = this.frames.peek().allocLocal(true);
-      this.symbols.addClassVar( this.currentClass,
-                                id,
-                                var);
+      // Check to see if identifier is a class variable
+      var = this.lookupClassVar(id);
+      if(var == null) { return null; }
+      
+      // Class variable found
+      Access thisVar = this.lookupVar("this");
+      p = thisVar.exp(this.frames.peek().FP());
     }
     
-    return var;
+    return var.exp(p);
   }
   
+  // Attempts to find the specified class in the symbol table
   private Set<String> lookupClassVars(String className)
   {
     return this.symbols.lookupClassVars(className);
   }
   
+  private Access lookupClassVar(String id)
+  {
+    return this.symbols.lookupClassVar(this.currentClass, id);
+  }
+  
+  private Access lookupMethodVar(String id)
+  {
+    return this.symbols.lookupMethodVar(this.currentClass, this.currentMethod, id);
+  }
+  
+  // Attempts to find the specified variable in the symbol table
   private Access lookupVar(String id)
   {
     Access var = null;
     if(this.currentMethod != null)
     {
-      var = this.symbols.lookupMethodVar(this.currentClass, this.currentMethod, id);
+      // Check for local method variable
+      var = this.lookupMethodVar(id);
     }
     
     if(var == null)
     {
-      var = this.symbols.lookupClassVar(this.currentClass, id);
+      // Check for class variable
+      var = this.lookupClassVar(id);
     }
     
     return var;
-  }
-  
-  // ---------------------------------------------------------------------------
-  
-  private class SymbolTable
-  {
-    private HashMap<String, ClassTable> table = new HashMap<String, ClassTable>();
-    
-    public void addClassMethod(String className, String methodName)
-    {
-      if(!this.table.containsKey(className))
-      {
-        this.table.put(className, new ClassTable());
-      }
-      
-      this.table.get(className).addMethod(methodName);
-    }
-    
-    public void addClassMethodVar(String className, String methodName, String id, Access var)
-    {
-      if(!this.table.containsKey(className))
-      {
-        this.table.put(className, new ClassTable());
-      }
-      
-      this.table.get(className).addMethodVar(methodName, id, var);
-    }
-    
-    public void addClassVar(String className, String id, Access var)
-    {
-      if(!this.table.containsKey(className))
-      {
-        this.table.put(className, new ClassTable());
-      }
-      
-      this.table.get(className).addClassVar(id, var);
-    }
-    
-    private Set<String> lookupClassVars(String className)
-    {
-      if(!this.table.containsKey(className)) { return null; }
-      
-      return this.table.get(className).classVars();
-    }
-    
-    public Access lookupClassVar(String className, String id)
-    {
-      if(!this.table.containsKey(className)) { return null; }
-      
-      return this.table.get(className).lookupClassVar(id);
-    }
-    
-    public Access lookupMethodVar(String className, String methodName, String id)
-    {
-      if(!this.table.containsKey(className)) { return null; }
-      
-      return this.table.get(className).lookupMethodVar(methodName, id);
-    }
-    
-    // -------------------------------------------------------------------------
-    
-    private class ClassTable
-    {
-      private HashMap<String, Access>                  vars     = new HashMap<String, Access>();
-      private HashMap<String, HashMap<String, Access>> methods  = new HashMap<String, HashMap<String, Access>>();
-      
-      public void addClassVar(String id, Access var)
-      {
-        this.vars.put(id, var);
-      }
-      
-      public void addMethod(String methodName)
-      {
-        if(!this.methods.containsKey(methodName))
-        {
-          this.methods.put(methodName, new HashMap<String, Access>());
-        }
-      }
-      
-      public void addMethodVar(String methodName, String id, Access var)
-      {
-        this.addMethod(methodName);
-        this.methods.get(methodName).put(id, var);
-      }
-      
-      public Set<String> classVars()
-      {
-        return this.vars.keySet();
-      }
-      
-      public Access lookupClassVar(String id)
-      {
-        return this.vars.get(id);
-      }
-      
-      public Access lookupMethodVar(String methodName, String id)
-      {
-        if(!this.methods.containsKey(methodName)) { return null; }
-        
-        return this.methods.get(methodName).get(id);
-      }
-    }
   }
 }
