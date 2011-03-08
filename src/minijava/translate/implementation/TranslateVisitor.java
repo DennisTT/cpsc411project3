@@ -253,9 +253,27 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     Access var = this.lookupVar(n.name);
     if(var == null) { return null; }
     
-    return new TranslateNx(IR.MOVE(IR.MEM(IR.PLUS(var.exp(this.frames.peek().FP()),
-                                                  IR.MUL(n.index.accept(this).unEx(), this.frames.peek().wordSize()))),
-                                   n.value.accept(this).unEx()));
+    int wordSize  = this.frames.peek().wordSize();
+    Label l1      = Label.gen(),
+          l2      = Label.gen(),
+          l3      = Label.gen(),
+          l4      = Label.gen();
+    IRExp p       = var.exp(this.frames.peek().FP()),
+          i       = n.index.accept(this).unEx(),
+          r       = IR.TEMP(new Temp());
+    
+    // Perform index bounds checking before assigning value to array memory
+    // Return IR.FALSE on error
+    return new TranslateNx(IR.SEQ(IR.CJUMP(RelOp.LT, IR.CONST(-1), i, l2, l1),
+                                  IR.LABEL(l1),
+                                  IR.MOVE(r, IR.FALSE),
+                                  IR.JUMP(l4),
+                                  IR.LABEL(l2),
+                                  IR.CJUMP(RelOp.LT, i, IR.MEM(IR.MINUS(p, wordSize)), l3, l1),
+                                  IR.LABEL(l3),
+                                  IR.MOVE(IR.MEM(IR.PLUS(p, IR.MUL(i, wordSize))),
+                                          n.value.accept(this).unEx()),
+                                  IR.LABEL(l4)));
   }
 
   @Override
@@ -299,9 +317,27 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   @Override
   public TranslateExp visit(ArrayLookup n)
   {
-    return new TranslateEx(IR.MEM(IR.PLUS(n.array.accept(this).unEx(),
-                                          IR.MUL( n.index.accept(this).unEx(), 
-                                                  this.frames.peek().wordSize()))));
+    int wordSize  = this.frames.peek().wordSize();
+    Label l1      = Label.gen(),
+          l2      = Label.gen(),
+          l3      = Label.gen(),
+          l4      = Label.gen();
+    IRExp p       = n.array.accept(this).unEx(),
+          i       = n.index.accept(this).unEx(),
+          r       = IR.TEMP(new Temp());
+    
+    // Perform index bounds checking before accessing array memory
+    // Return IR.FALSE on error
+    return new TranslateEx(IR.ESEQ(IR.SEQ(IR.CJUMP(RelOp.LT, IR.CONST(-1), i, l2, l1),
+                                          IR.LABEL(l1),
+                                          IR.MOVE(r, IR.FALSE),
+                                          IR.JUMP(l4),
+                                          IR.LABEL(l2),
+                                          IR.CJUMP(RelOp.LT, i, IR.MEM(IR.MINUS(p, wordSize)), l3, l1),
+                                          IR.LABEL(l3),
+                                          IR.MOVE(r, IR.MEM(IR.PLUS(p, IR.MUL(i, wordSize)))),
+                                          IR.LABEL(l4)),
+                                  r));
   }
 
   @Override
