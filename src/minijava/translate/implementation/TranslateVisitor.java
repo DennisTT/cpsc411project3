@@ -206,13 +206,13 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(While n)
   {
     Label done = Label.generate("done");
+    Label body = Label.generate("body");
     Label test = Label.generate("test");
-    TranslateExp loop = new IfThenElseExp(n.tst.accept(this), 
-                                          new TranslateNx(IR.SEQ( n.body.accept(this).unNx(),
-                                                                  IR.JUMP(test))), 
-                                          new TranslateNx(IR.JUMP(done)));
     return new TranslateNx(IR.SEQ(IR.LABEL(test),
-                                  loop.unNx(),
+                                  n.tst.accept(this).unCx(body, done),
+                                  IR.LABEL(body),
+                                  n.body.accept(this).unNx(),
+                                  IR.JUMP(test),
                                   IR.LABEL(done)));
   }
 
