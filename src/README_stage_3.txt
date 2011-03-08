@@ -11,8 +11,12 @@ If you changed any code outside of
   - minijava.analysis.implementation (for the liveness analysis)
 please include a *brief* explanation here what you changed and why:
 
-  XXX
-  
+  - Added public Access alloc(int offset) to Frame.java to allow for
+    TranslateVisitor.java to be able to generate the proper IR code when
+    accessing class variables. Note that TranslateVisitor does not actually use
+    this method to allocate space, as object allocation is done on the heap
+    rather than the stack.
+
 Additional comments to the TA (if any): 
 
   XXX
