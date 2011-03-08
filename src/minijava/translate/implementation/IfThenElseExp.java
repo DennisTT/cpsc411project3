@@ -1,5 +1,6 @@
 package minijava.translate.implementation;
 
+import junit.framework.Assert;
 import minijava.ir.temp.Label;
 import minijava.ir.temp.Temp;
 import minijava.ir.tree.IR;
@@ -48,7 +49,9 @@ public class IfThenElseExp extends TranslateExp
   @Override
   public IRStm unCx(Label t, Label f)
   {
-    // TODO Auto-generated method stub
+    // This method should never be called
+    // Do nothing
+    Assert.assertTrue("unCx should not be called for IfThenElseExp.", false);
     return null;
   }
 }

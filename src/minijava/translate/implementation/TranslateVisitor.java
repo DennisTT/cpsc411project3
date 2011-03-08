@@ -342,6 +342,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(IdentifierExp n)
   {
     Access var = this.lookupVar(n.name);
+    Assert.assertNotNull("Identifier " + n + " not found in lookup.", var);
     return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
   }
   
@@ -349,6 +350,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(This n)
   {
     Access var = this.lookupVar("this");
+    Assert.assertNotNull("'This' not found in lookup.", var);
     return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
   }
   
