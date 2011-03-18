@@ -113,7 +113,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     {
       frameParams.add(true);
     }
-    this.frames.push(this.createNewFrame(Label.get(n.name), frameParams));
+    this.frames.push(this.createNewFrame(Label.get(this.currentClass + "_" + n.name), frameParams));
   
     IRExp e = null;
     
@@ -345,7 +345,7 @@ public class TranslateVisitor implements Visitor<TranslateExp>
       args.add(n.rands.elementAt(i).accept(this).unEx());
     }
     
-    return new TranslateEx(IR.CALL(Label.get(n.name), args));
+    return new TranslateEx(IR.CALL(Label.get(n.receiver.getType().toString() + "_" + n.name), args));
   }
 
   @Override
