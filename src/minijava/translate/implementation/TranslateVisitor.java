@@ -1,10 +1,7 @@
 package minijava.translate.implementation;
 
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Stack;
-
-import junit.framework.Assert;
 
 import minijava.ast.*;
 import minijava.ir.frame.Access;
@@ -36,9 +33,10 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateVisitor(Frame frameFactory, Fragments fragments, SymbolTable symbols)
   {
     this.frames.push(frameFactory);
-    this.fragments = fragments;
+    
+    this.fragments      = fragments;
     this.classFragments = new Fragments(frameFactory);
-    this.symbols = symbols;
+    this.symbols        = symbols;
   }
   
   @Override
@@ -73,8 +71,10 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     this.frames.push(this.createNewFrame(Translator.L_MAIN, frameParams));
     this.currentClass = n.className;
     this.currentMethod = "main";
+    
     this.fragments.add(new ProcFragment(this.frames.peek(),
                                         this.procEntryExit(n.statement.accept(this))));
+    
     this.currentClass = this.currentMethod = null;
     this.frames.pop();
     
@@ -371,29 +371,32 @@ public class TranslateVisitor implements Visitor<TranslateExp>
   public TranslateExp visit(This n)
   {
     Access var = this.lookupVar("this");
-    Assert.assertNotNull("'This' not found in lookup.", var);
     return (var != null) ? new TranslateEx(var.exp(this.frames.peek().FP())) : null;
   }
   
   @Override
   public TranslateExp visit(NewArray n)
   {
-    IRExp r = IR.TEMP(new Temp()),
-          c = IR.CALL(Translator.L_NEW_ARRAY, List.list(n.size.accept(this).unEx()));
+    IRExp r         = IR.TEMP(new Temp()),
+          c         = IR.CALL(Translator.L_NEW_ARRAY, List.list(n.size.accept(this).unEx()));
+    IRStm seq       = IR.MOVE(r, c);
     
-    return new TranslateEx(IR.ESEQ( IR.MOVE(r, c), r));
+    return new TranslateEx(IR.ESEQ(seq, r));
   }
 
   @Override
   public TranslateExp visit(NewObject n)
   {
-    int         s = Math.max(this.symbols.numClassVars(n.typeName) * this.frames.peek().wordSize(), this.frames.peek().wordSize());
-    IRExp       r = IR.TEMP(new Temp()),
-                c = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
-    IRStm seq = IR.MOVE(r, c);
-    for(int i = 0; i < this.symbols.numClassVars(n.typeName); ++i)
+    int   wordSize  = this.frames.peek().wordSize(),
+          length    = this.symbols.numClassVars(n.typeName),
+          s         = (length + 1) * wordSize;
+    IRExp r         = IR.TEMP(new Temp()),
+          c         = IR.CALL(Translator.L_NEW_OBJECT, List.list(IR.CONST(s)));
+    IRStm seq       = IR.MOVE(r, c);
+    
+    for(int i = 0; i < length; ++i)
     {
-      seq = IR.SEQ(seq, IR.MOVE(IR.MEM(IR.PLUS(r, i * this.frames.peek().wordSize())), IR.CONST(0)));
+      seq = IR.SEQ(seq, IR.MOVE(IR.MEM(IR.PLUS(r, i * wordSize)), IR.CONST(0)));
     }
     return new TranslateEx(IR.ESEQ(seq, r));
   }
@@ -427,25 +430,6 @@ public class TranslateVisitor implements Visitor<TranslateExp>
     }
     
     return currentFrame.procEntryExit1(s);
-  }
-  
-  // Adds the specified method as a symbol entry to the current class
-  private void addClassMethod(String methodName)
-  {
-    this.symbols.addClassMethod(this.currentClass, methodName);
-  }
-  
-  // Adds the specified formal as a symbol entry to the current class method
-  private Access addFormal(int i, String id)
-  {
-    Assert.assertNotNull(this.currentMethod);
-    
-    Access var = this.frames.peek().getFormal(i);
-    this.symbols.addClassMethodVar( this.currentClass,
-                                    this.currentMethod,
-                                    id,
-                                    var);
-    return var;
   }
   
   // Returns the appropriate IRExp representing the memory location for the
