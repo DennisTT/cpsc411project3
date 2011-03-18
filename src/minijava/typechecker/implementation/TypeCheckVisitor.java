@@ -503,6 +503,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
+    n.setType(t1.type);
     return t1;
   }
 
@@ -527,7 +528,9 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return this.createTypeChecked(new BooleanType());
+    BooleanType t = new BooleanType();
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
@@ -551,6 +554,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
+    n.setType(t1.type);
     return t1;
   }
 
@@ -575,6 +579,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
+    n.setType(t1.type);
     return t1;
   }
 
@@ -599,6 +604,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
+    n.setType(t1.type);
     return t1;
   }
 
@@ -622,7 +628,8 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return this.createTypeChecked(new IntegerType());
+    n.setType(t2.type);
+    return this.createTypeChecked(t2.type);
   }
 
   @Override
@@ -637,7 +644,9 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return this.createTypeChecked(new IntegerType());
+    IntegerType t = new IntegerType();
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
@@ -730,19 +739,24 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       }
     }
     
+    n.setType(m.returnType);
     return this.createTypeChecked(m.returnType);
   }
 
   @Override
   public TypeChecked visit(IntegerLiteral n)
   {
-    return this.createTypeChecked(new IntegerType());
+    IntegerType t = new IntegerType();
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
   public TypeChecked visit(BooleanLiteral n)
   {
-    return this.createTypeChecked(new BooleanType());
+    BooleanType t = new BooleanType();
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
@@ -752,19 +766,24 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
     VarInfo v = this.lookupVarInfo(n.name);
     if(v == null) { return null; }
     
+    n.setType(v.type);
     return this.createTypeChecked(v.type);
   }
 
   @Override
   public TypeChecked visit(This n)
   {
-    return this.createTypeChecked(new ObjectType(this.currentClass));
+    ObjectType t = new ObjectType(this.currentClass);
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
   public TypeChecked visit(NewArray n)
   {
-    return this.createTypeChecked(new IntArrayType());
+    IntArrayType t = new IntArrayType();
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
@@ -778,7 +797,9 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       return null;
     }
     
-    return this.createTypeChecked(new ObjectType(n.typeName));
+    ObjectType t = new ObjectType(n.typeName);
+    n.setType(t);
+    return this.createTypeChecked(t);
   }
 
   @Override
@@ -791,6 +812,7 @@ public class TypeCheckVisitor implements Visitor<TypeChecked>
       this.error.typeError(n.e, new BooleanType(), t.type);
     }
     
+    n.setType(t.type);
     return t;
   }
   
