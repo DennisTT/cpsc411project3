@@ -1,12 +1,10 @@
 package minijava.translate.implementation;
 
-import junit.framework.Assert;
 import minijava.ir.temp.Label;
 import minijava.ir.temp.Temp;
 import minijava.ir.tree.IR;
 import minijava.ir.tree.IRExp;
 import minijava.ir.tree.IRStm;
-import minijava.ir.tree.CJUMP.RelOp;
 
 public class IfThenElseExp extends TranslateExp
 {
