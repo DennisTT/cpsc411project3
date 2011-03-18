@@ -19,4 +19,4 @@ please include a *brief* explanation here what you changed and why:
 
 Additional comments to the TA (if any): 
 
-  XXX
+  None
